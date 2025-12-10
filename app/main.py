@@ -5,7 +5,7 @@ A FastAPI-based service that allows users to upload documents and ask questions
 about them using Mistral AI's language models.
 
 Key Features:
-- Document upload (text files)
+- Document upload (text files and PDFs)
 - AI-powered question answering
 - RESTful API design
 - Interactive API documentation
@@ -18,6 +18,8 @@ from mistralai import Mistral
 import os
 from pathlib import Path
 from app.config import get_settings
+import PyPDF2
+import io
 
 # Load configuration from .env file
 settings = get_settings()
@@ -58,6 +60,33 @@ class QuestionRequest(BaseModel):
     document_id: str
 
 
+def extract_text_from_pdf(file_content: bytes) -> str:
+    """
+    Extract text from a PDF file.
+    
+    Args:
+        file_content (bytes): PDF file content as bytes
+        
+    Returns:
+        str: Extracted text from the PDF
+        
+    Raises:
+        Exception: If PDF cannot be parsed
+    """
+    try:
+        # Create a PDF reader object from bytes
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+        
+        # Extract text from all pages
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text() + "\n"
+        
+        return text.strip()
+    except Exception as e:
+        raise Exception(f"Failed to extract text from PDF: {str(e)}")
+
+
 @app.get("/")
 async def root():
     """
@@ -80,25 +109,48 @@ async def root():
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
     """
-    Upload a text document to the system.
+    Upload a document (text or PDF) to the system.
+    
+    Supports:
+    - Plain text files (.txt)
+    - PDF files (.pdf)
     
     The document is stored in memory and can be queried using the /ask endpoint.
     
     Args:
-        file (UploadFile): The text file to upload
+        file (UploadFile): The file to upload
         
     Returns:
-        dict: Upload status, document ID, and file size
+        dict: Upload status, document ID, file size, and file type
         
     Raises:
-        HTTPException: If file cannot be read or decoded as UTF-8
+        HTTPException: If file cannot be processed
     """
     try:
         # Read file contents
         content = await file.read()
         
-        # Decode bytes to text (assumes UTF-8 encoding)
-        text = content.decode('utf-8')
+        # Determine file type and extract text accordingly
+        file_extension = Path(file.filename).suffix.lower()
+        
+        if file_extension == '.pdf':
+            # Extract text from PDF
+            text = extract_text_from_pdf(content)
+            file_type = "PDF"
+        elif file_extension in ['.txt', '.md']:
+            # Decode text file
+            text = content.decode('utf-8')
+            file_type = "Text"
+        else:
+            # Try to decode as text, fallback to error
+            try:
+                text = content.decode('utf-8')
+                file_type = "Text"
+            except:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {file_extension}. Please upload .txt or .pdf files."
+                )
         
         # Store document using filename as ID
         doc_id = file.filename
@@ -108,8 +160,11 @@ async def upload_document(file: UploadFile = File(...)):
             "status": "success",
             "document_id": doc_id,
             "size": len(text),
-            "message": f"Document '{doc_id}' uploaded successfully"
+            "file_type": file_type,
+            "message": f"{file_type} document '{doc_id}' uploaded successfully"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=400, 

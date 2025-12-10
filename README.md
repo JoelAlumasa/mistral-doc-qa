@@ -1,14 +1,12 @@
-cd ~/projects/mistral-doc-qa
-
-cat > README.md << 'EOF'
 # Mistral Document Q&A API
 
-A FastAPI-based document question-answering system powered by Mistral AI. Upload documents and ask questions about them using natural language.
+A FastAPI-based document question-answering system powered by Mistral AI. Upload documents (text or PDF) and ask questions about them using natural language.
 
 ## 🚀 Features
 
-- **Document Upload**: Upload text documents via REST API
+- **Document Upload**: Upload text files (.txt) and PDFs (.pdf)
 - **AI-Powered Q&A**: Ask questions and get answers based on document content
+- **PDF Support**: Automatically extracts text from PDF documents
 - **RESTful Design**: Clean, well-documented API endpoints
 - **Interactive Docs**: Auto-generated Swagger UI for easy testing
 - **Mistral Integration**: Leverages Mistral AI's language models
@@ -17,6 +15,7 @@ A FastAPI-based document question-answering system powered by Mistral AI. Upload
 
 - **FastAPI**: Modern Python web framework
 - **Mistral AI**: Large language model for question answering
+- **PyPDF2**: PDF text extraction
 - **Pydantic**: Data validation and settings management
 - **Uvicorn**: ASGI server for production deployment
 
@@ -68,22 +67,28 @@ Visit `http://127.0.0.1:8000/docs` for interactive API documentation where you c
 ```bash
 POST /upload
 ```
-Upload a text document to the system.
+Upload a text or PDF document to the system.
+
+**Supported formats:**
+- `.txt` - Plain text files
+- `.pdf` - PDF documents
+- `.md` - Markdown files
 
 **Example using curl:**
 ```bash
 curl -X POST "http://127.0.0.1:8000/upload" \
   -H "Content-Type: multipart/form-data" \
-  -F "file=@document.txt"
+  -F "file=@document.pdf"
 ```
 
 **Response:**
 ```json
 {
   "status": "success",
-  "document_id": "document.txt",
+  "document_id": "document.pdf",
   "size": 1234,
-  "message": "Document 'document.txt' uploaded successfully"
+  "file_type": "PDF",
+  "message": "PDF document 'document.pdf' uploaded successfully"
 }
 ```
 
@@ -99,7 +104,7 @@ curl -X POST "http://127.0.0.1:8000/ask" \
   -H "Content-Type: application/json" \
   -d '{
     "question": "What is the main topic?",
-    "document_id": "document.txt"
+    "document_id": "document.pdf"
   }'
 ```
 
@@ -109,7 +114,7 @@ curl -X POST "http://127.0.0.1:8000/ask" \
   "status": "success",
   "question": "What is the main topic?",
   "answer": "Based on the document, the main topic is...",
-  "document_id": "document.txt"
+  "document_id": "document.pdf"
 }
 ```
 
@@ -125,7 +130,7 @@ Get a list of all uploaded documents.
   "count": 2,
   "documents": [
     {"id": "doc1.txt", "size": 1234},
-    {"id": "doc2.txt", "size": 5678}
+    {"id": "report.pdf", "size": 5678}
   ]
 }
 ```
@@ -152,17 +157,18 @@ mistral-doc-qa/
 ## 🚧 Current Limitations
 
 - Documents are stored in memory (lost on restart)
-- Only supports plain text files (UTF-8 encoded)
 - Document content is limited to 3000 characters for AI processing
+- No authentication/authorization implemented
 
 ## 🔮 Future Improvements
 
-- [ ] Add PDF support
 - [ ] Implement persistent storage (database)
-- [ ] Add authentication
+- [ ] Add authentication and user management
 - [ ] Support multiple AI models
 - [ ] Add document chunking for larger files
 - [ ] Implement caching for faster responses
+- [ ] Add support for more file formats (DOCX, HTML, etc.)
+- [ ] Add document versioning
 
 ## 📝 License
 
@@ -179,4 +185,3 @@ Joel Alumasa - [GitHub](https://github.com/JoelAlumasa)
 ---
 
 **Built with ❤️ for the Mistral AI Software Engineer Internship**
-EOF
