@@ -2,6 +2,21 @@
 
 A FastAPI-based document question-answering system powered by Mistral AI. Upload documents (text or PDF) and ask questions about them using natural language.
 
+## 🎯 Demo
+
+### Quick Start
+```bash
+# 1. Upload a document
+curl -X POST "http://127.0.0.1:8000/upload" -F "file=@document.pdf"
+
+# 2. Ask a question
+curl -X POST "http://127.0.0.1:8000/ask" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is this about?", "document_id": "document.pdf"}'
+```
+
+Visit `http://127.0.0.1:8000/docs` for interactive API documentation.
+
 ## 🚀 Features
 
 - **Document Upload**: Upload text files (.txt) and PDFs (.pdf)
@@ -148,27 +163,47 @@ mistral-doc-qa/
 └── README.md            # This file
 ```
 
+## 💡 How It Works
+
+1. **Upload**: Documents (text or PDF) are uploaded via the `/upload` endpoint
+2. **Storage**: Text is extracted and stored in memory with the filename as ID
+3. **Query**: When you ask a question via `/ask`, the document content is sent to Mistral AI as context
+4. **Response**: Mistral AI generates an answer based on the document content
+
 ## 🔒 Security Notes
 
 - The `.env` file containing your API key is excluded from git via `.gitignore`
-- In production, consider using environment variables or secret management services
+- In production, use environment variables or secret management services
 - CORS is currently set to allow all origins (`["*"]`) - restrict this in production
+- No authentication implemented - add auth for production use
 
 ## 🚧 Current Limitations
 
 - Documents are stored in memory (lost on restart)
 - Document content is limited to 3000 characters for AI processing
 - No authentication/authorization implemented
+- Single-user system (no multi-tenancy)
 
 ## 🔮 Future Improvements
 
-- [ ] Implement persistent storage (database)
-- [ ] Add authentication and user management
-- [ ] Support multiple AI models
+- [ ] Implement persistent storage (PostgreSQL/MongoDB)
+- [ ] Add user authentication and authorization
+- [ ] Support multiple AI models (GPT-4, Claude, etc.)
 - [ ] Add document chunking for larger files
 - [ ] Implement caching for faster responses
 - [ ] Add support for more file formats (DOCX, HTML, etc.)
-- [ ] Add document versioning
+- [ ] Document versioning and history
+- [ ] Rate limiting and usage analytics
+- [ ] Streaming responses for long answers
+- [ ] Multi-document querying
+
+## 🧪 Testing
+
+Run the interactive docs to test:
+```bash
+uvicorn app.main:app --reload
+# Visit http://127.0.0.1:8000/docs
+```
 
 ## 📝 License
 
@@ -180,8 +215,12 @@ This is a learning project for the Mistral AI internship application. Feedback a
 
 ## 👤 Author
 
-Joel Alumasa - [GitHub](https://github.com/JoelAlumasa)
+**Joel Alumasa**
+- GitHub: [@JoelAlumasa](https://github.com/JoelAlumasa)
+- Project: [mistral-doc-qa](https://github.com/JoelAlumasa/mistral-doc-qa)
 
 ---
 
 **Built with ❤️ for the Mistral AI Software Engineer Internship**
+
+*Demonstrating FastAPI, AI integration, PDF processing, and clean code practices.*
